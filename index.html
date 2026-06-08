@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Override: Scavenger Hunt</title>
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #00ff66;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+            overflow-x: hidden; /* Prevents scrollbars during explosion */
+            position: relative;
+        }
+        h1.main-title {
+            font-size: 3.5rem;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 40px;
+            text-shadow: 0 0 20px rgba(0, 255, 102, 0.6);
+            border-bottom: 2px solid #00ff66;
+            padding-bottom: 20px;
+        }
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #00ff66;
+            background: #111;
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.2);
+            display: none; /* Hidden by default */
+        }
+        /* First section is visible initially */
+        #section1 {
+            display: block;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            background: #000;
+            border: 1px solid #00ff66;
+            color: #00ff66;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            width: 250px;
+            margin-top: 5px;
+        }
+        button {
+            background: #00ff66;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #00cc52;
+        }
+        .error {
+            color: #ff3333;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+        #typing-container {
+            white-space: pre-line;
+            font-weight: bold;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+        }
+        .preview-box {
+            background: #000;
+            border: 1px dashed #00ff66;
+            padding: 10px;
+            display: inline-block;
+            min-width: 150px;
+            margin-top: 5px;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+        .tool-link {
+            display: inline-block;
+            margin: 15px 0;
+            color: #00ff66;
+            text-decoration: none;
+            border-bottom: 1px dashed #00ff66;
+        }
+        .tool-link:hover {
+            color: #ff3333;
+            border-bottom-color: #ff3333;
+        }
+
+        /* --- NEW ANIMATION STYLES --- */
+        .falling-particle {
+            position: fixed;
+            pointer-events: none;
+            transition: transform 2s cubic-bezier(0.25, 1, 0.5, 1), opacity 2s;
+            z-index: 9999;
+        }
+        
+        .explosion-particle {
+            position: fixed;
+            pointer-events: none;
+            width: 6px;
+            height: 6px;
+            background: #00ff66;
+            box-shadow: 0 0 8px #00ff66;
+            border-radius: 50%;
+            z-index: 10000;
+        }
+
+        #congrats-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 2.5s ease-in-out;
+            z-index: 10001;
+        }
+
+        #congrats-screen.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .congrats-text {
+            font-size: 4rem;
+            color: #00ff66;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            text-shadow: 0 0 30px rgba(0, 255, 102, 0.8);
+            text-align: center;
+            animation: pulse 2s infinite alternate;
+        }
+
+        .congrats-subtext {
+            font-size: 1.5rem;
+            color: #fff;
+            margin-top: 20px;
+            letter-spacing: 2px;
+        }
+
+        @keyframes pulse {
+            from { text-shadow: 0 0 20px rgba(0, 255, 102, 0.6); transform: scale(1); }
+            to { text-shadow: 0 0 40px rgba(0, 255, 102, 1); transform: scale(1.03); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-content">
+        <h1 class="main-title">Welcome to Plexus</h1>
+
+        <div id="section1" class="section">
+            <div id="typing-container"></div>
+            
+            <div id="stage1-interactive" style="display: none;">
+                <div class="input-group">
+                    <label for="inspect-code">Enter Ciphertext string hidden:</label><br>
+                    <input type="text" id="inspect-code" placeholder="Paste ciphertext here" oninput="liveDecrypt()">
+                </div>
+
+                <div class="input-group">
+                    <label for="cipher-key">Enter 4-Digit Cipher Key (Where are you?):</label><br>
+                    <input type="text" id="cipher-key" maxlength="4" placeholder="0000" oninput="liveDecrypt()">
+                    <br>
+                    <label style="margin-top: 10px; display:block;">Decoded Output Preview:</label>
+                    <div id="decrypted-preview" class="preview-box">-------</div>
+                </div>
+
+                <hr style="border-color: #222; margin: 20px 0;">
+
+                <div class="input-group">
+                    <label for="stage1-passcode">Enter the Correct Decoded Message to Proceed:</label><br>
+                    <input type="text" id="stage1-passcode" placeholder="Enter word">
+                    <br>
+                    <button onclick="checkStage1()">Submit Key</button>
+                </div>
+                <p id="error1" class="error"></p>
+            </div>
+        </div>
+
+        <div id="section2" class="section">
+            <h2>[STAGE 2: PLEXUS MISSION BOARD]</h2>
+            <p>
+                welcome to the plexus mission board. our primary objective is to drive innovation across critical sectors. in the <strong>R</strong>ealms of <strong>I</strong>ndustrial engineering, we focus on streamlining assembly lines, optimizing supply chains, and integrating automation systems to maximize plant efficiency. <strong>V</strong>isionary thinking moves us into aerospace and <strong>E</strong>ngineering systems meant to withstand harsh environments. furthermore, our <strong>R</strong>uggedized designs ensure high-reliability tech functions flawlessly. lastly, our <strong>S</strong>ustained commitment to <strong>I</strong>nnovation in lifescience ensures the <strong>D</strong>evelopment of advanced medical imaging diagnostics and <strong>E</strong>xcellent surgical robotics. find the hidden room in this text to discover the passcode that unlocks the next step of your journey. you will find the access code inside that location on a physical sign, which will unlock the electronic system.
+            </p>
+            <p><strong>Find the room hidden in the message above and locate the physical code hidden inside it.</strong></p>
+            
+            <label for="stage2-key">Enter Code Found in Room:</label><br>
+            <input type="text" id="stage2-key" placeholder="Enter code">
+            <button onclick="checkStage2()">Submit Code</button>
+            <p id="error2" class="error"></p>
+        </div>
+
+        <div id="section3" class="section">
+            <h2>[STAGE 3: AUDIO TRANSMISSION]</h2>
+            <p>An intercepted audio transmission has been logged. You must download and analyze it using an external Morse Code audio translator to decipher the location of the next asset. The key word is Raleigh.</p>
+            
+            <audio controls>
+                <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" type="audio/wav">
+                Your browser does not support the audio element.
+            </audio>
+            
+            <br>
+            <a href="https://morsecode.world/international/decoder/audio-decoder-adaptive.html" target="_blank" class="tool-link">> Launch External Audio Decoder Tool</a>
+            <br>
+            
+            <div class="input-group">
+                <label for="stage3-key">Enter Key from Paper:</label><br>
+                <input type="text" id="stage3-key" placeholder="Enter code">
+                <br>
+                <button onclick="checkStage3()">Verify Key</button>
+            </div>
+            <p id="error3" class="error"></p>
+        </div>
+
+        <div id="section4" class="section">
+            <h2>[FINAL STAGE: ACCESS GRANTED]</h2>
+            <p>In order to complete this hunt, we will have to go back to the very beginning.</p>
+            <p>Find me to get the final code to solve the scavenger hunt.</p>
+            
+            <label for="final-key">Enter Final Victory Code:</label><br>
+            <input type="text" id="final-key" placeholder="Final Code">
+            <button onclick="checkFinal()">Complete Hunt</button>
+            <p id="error4" class="error" style="color: #00ff66;"></p>
+        </div>
+    </div>
+
+    <div id="congrats-screen">
+        <div class="congrats-text">System Purged<br>Congratulations!</div>
+        <div class="congrats-subtext">You have successfully completed the hunt.</div>
+    </div>
+
+    <script>
+        // --- STAGE 1 CONFIG & TYPING EFFECT ---
+        const lines = [
+            "Aerospace networks initialized.",
+            "Tracking industrial protocols.",
+            "Lifescience databases online.",
+            "Advanced encryption detected.",
+            "System ready.\n",
+            "Make sure to INSPECT everything closely during this scavenger hunt.\n"
+        ];
+
+        let lineIndex = 0;
+        let charIndex = 0;
+        const typingContainer = document.getElementById('typing-container');
+
+        function typeEffect() {
+            if (lineIndex < lines.length) {
+                if (charIndex < lines[lineIndex].length) {
+                    typingContainer.innerHTML += lines[lineIndex].charAt(charIndex);
+                    charIndex++;
+                    setTimeout(typeEffect, 40);
+                } else {
+                    typingContainer.innerHTML += "\n";
+                    lineIndex++;
+                    charIndex = 0;
+                    setTimeout(typeEffect, 500);
+                }
+            } else {
+                document.getElementById('stage1-interactive').style.display = 'block';
+            }
+        }
+
+        // --- VIGENERE ENCRYPTION HANDLER ---
+        const targetCiphertext = "xdtislg";
+        
+        console.log("Decode This: " + targetCiphertext);
+
+        function decryptVigenere(ciphertext, key) {
+            if (!ciphertext || !key || key.length === 0) return "-------";
+            let result = "";
+            for (let i = 0; i < ciphertext.length; i++) {
+                let charCode = ciphertext.charCodeAt(i) - 97; // a = 0
+                let currentKeyChar = key.charAt(i % key.length);
+                let shift = isNaN(parseInt(currentKeyChar)) ? 0 : parseInt(currentKeyChar);
+                
+                let decryptedCode = (charCode - shift + 26) % 26;
+                result += String.fromCharCode(decryptedCode + 97);
+            }
+            return result;
+        }
+
+        function liveDecrypt() {
+            const inspectInput = document.getElementById('inspect-code').value.trim().toLowerCase();
+            const keyInput = document.getElementById('cipher-key').value;
+            const previewBox = document.getElementById('decrypted-preview');
+            
+            if (inspectInput === targetCiphertext) {
+                const decryptedText = decryptVigenere(inspectInput, keyInput);
+                previewBox.innerText = decryptedText.toUpperCase();
+            } else {
+                previewBox.innerText = "-------";
+            }
+        }
+
+        function checkStage1() {
+            const inspectInput = document.getElementById('inspect-code').value.trim().toLowerCase();
+            const keyInput = document.getElementById('cipher-key').value.trim();
+            const passcodeGiven = document.getElementById('stage1-passcode').value.trim().toLowerCase();
+            
+            if (inspectInput !== targetCiphertext) {
+                document.getElementById('error1').style.color = "#ff3333";
+                document.getElementById('error1').innerText = "Incorrect Ciphertext string entered.";
+                return;
+            }
+
+            if (keyInput !== "5520") {
+                document.getElementById('error1').style.color = "#ff3333";
+                document.getElementById('error1').innerText = "Incorrect 4-Digit Cipher Key.";
+                return;
+            }
+            
+            if (passcodeGiven === "syringe") {
+                document.getElementById('error1').style.color = "#00ff66";
+                document.getElementById('error1').innerText = "Access Granted. Initializing Phase 2 Link...";
+                document.getElementById('section2').style.display = 'block';
+                document.getElementById('section2').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                document.getElementById('error1').style.color = "#ff3333";
+                document.getElementById('error1').innerText = "Invalid decrypted passcode.";
+            }
+        }
+
+        // --- STAGE 2 VALIDATION ---
+        function checkStage2() {
+            const code = document.getElementById('stage2-key').value.trim().toLowerCase();
+            if (code === "riverside") { 
+                document.getElementById('section3').style.display = 'block';
+                document.getElementById('section3').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                document.getElementById('error2').innerText = "Access Denied. Invalid Room Passcode.";
+            }
+        }
+
+        // --- STAGE 3 VALIDATION ---
+        function checkStage3() {
+            const code = document.getElementById('stage3-key').value.trim().toLowerCase();
+            if (code === "corp") {
+                document.getElementById('section4').style.display = 'block';
+                document.getElementById('section4').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                document.getElementById('error3').innerText = "Access Denied. Incorrect Clearance Key.";
+            }
+        }
+
+        // --- FINAL VALIDATION & EXPLOSION ANIMATION ---
+        function checkFinal() {
+            const code = document.getElementById('final-key').value.trim().toLowerCase();
+            if (code === "plex") {
+                triggerExplosionSequence();
+            } else {
+                document.getElementById('error4').style.color = "#ff3333";
+                document.getElementById('error4').innerText = "Invalid Final Code.";
+            }
+        }
+
+        function triggerExplosionSequence() {
+            const gameContent = document.getElementById('game-content');
+            
+            // 1. Break the content into individual characters and elements dynamically
+            const elements = gameContent.querySelectorAll('p, h1, h2, label, input, button, hr, div, audio, a');
+            
+            elements.forEach((element) => {
+                // Skip structural containers that have text broken down into children
+                if(element.tagName === 'DIV' && element.children.length > 0) return;
+                
+                const rect = element.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) return;
+
+                // Handle text elements by breaking them into individual letters
+                if (element.childNodes.length === 1 && element.childNodes[0].nodeType === Node.TEXT_NODE) {
+                    const text = element.innerText;
+                    element.innerHTML = '';
+                    
+                    // Create an inline box structure for letters
+                    element.style.display = 'inline'; 
+
+                    for (let i = 0; i < text.length; i++) {
+                        if (text[i] === ' ') {
+                            element.appendChild(document.createTextNode(' '));
+                            continue;
+                        }
+                        const span = document.createElement('span');
+                        span.innerText = text[i];
+                        span.style.display = 'inline-block';
+                        element.appendChild(span);
+                        
+                        // Apply physics to each individual letter
+                        setTimeout(() => makeElementFall(span), Math.random() * 300);
+                    }
+                } else {
+                    // For structural elements like inputs, buttons, audio players, drop them whole
+                    setTimeout(() => makeElementFall(element), Math.random() * 200);
+                }
+            });
+
+            // 2. Generate sparks/explosions across the screen area
+            for (let i = 0; i < 150; i++) {
+                setTimeout(createExplosionParticle, Math.random() * 800);
+            }
+
+            // 3. Smoothly fade out everything left and fade into the main congrats banner
+            setTimeout(() => {
+                gameContent.style.display = 'none';
+                const congrats = document.getElementById('congrats-screen');
+                congrats.classList.add('visible');
+            }, 2000);
+        }
+
+        function makeElementFall(el) {
+            const rect = el.getBoundingClientRect();
+            if (rect.width === 0) return;
+
+            // Clone structural metrics so they physics engine anchors correctly
+            const particle = document.createElement('div');
+            particle.className = 'falling-particle';
+            particle.style.left = rect.left + 'px';
+            particle.style.top = rect.top + 'px';
+            particle.style.width = rect.width + 'px';
+            particle.style.height = rect.height + 'px';
+            
+            // Keep styling identical to original letters/components
+            particle.innerHTML = el.outerHTML || el.innerText;
+            document.body.appendChild(particle);
+            
+            // Hide the actual element behind the clone
+            el.style.opacity = '0';
+
+            // Random physics trajectory
+            const randomX = (Math.random() - 0.5) * 600; // Left or Right spread
+            const randomY = window.innerHeight + 200;    // Fall completely offscreen
+            const randomRot = (Math.random() - 0.5) * 720; // Heavy spin
+
+            // Trigger structural rendering frame
+            requestAnimationFrame(() => {
+                particle.style.transform = `translate(${randomX}px, ${randomY}px) rotate(${randomRot}deg)`;
+                particle.style.opacity = '0';
+            });
+
+            // Cleanup memory allocation
+            setTimeout(() => particle.remove(), 2000);
+        }
+
+        function createExplosionParticle() {
+            const p = document.createElement('div');
+            p.className = 'explosion-particle';
+            
+            // Explode all over where sections are located
+            p.style.left = Math.random() * window.innerWidth + 'px';
+            p.style.top = Math.random() * window.innerHeight + 'px';
+            
+            document.body.appendChild(p);
+
+            const destX = (Math.random() - 0.5) * 150;
+            const destY = (Math.random() - 0.5) * 150;
+
+            p.animate([
+                { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+                { transform: `translate(${destX}px, ${destY}px) scale(0)`, opacity: 0 }
+            ], {
+                duration: 500 + Math.random() * 500,
+                easing: 'cubic-bezier(0.1, 0.8, 0.3, 1)'
+            }).onfinish = () => p.remove();
+        }
+
+        window.onload = typeEffect;
+    </script>
+</body>
+</html>
