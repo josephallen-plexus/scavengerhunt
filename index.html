@@ -3,19 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Override: Scavenger Hunt</title>
+    <title>Plexus Scavenger Hunt</title>
+
     <style>
+        /* Global Hacker Theme Styling */
         body {
-            background-color: #0a0a0a;
+            background-color: #0d0d0d;
             color: #00ff66;
             font-family: 'Courier New', Courier, monospace;
-            padding: 20px;
-            max-width: 800px;
-            margin: 0 auto;
-            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             overflow-x: hidden; /* Prevents scrollbars during explosion */
             position: relative;
         }
+
+        /* Title Page Screen */
+        #title-screen {
+            text-align: center;
+            max-width: 600px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+            border: 1px solid #00ff66;
+            background-color: rgba(0, 0, 0, 0.9);
+            border-radius: 8px;
+            transition: opacity 0.5s ease;
+        }
+
+        #title-screen h1 {
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 20px;
+            animation: blink 2s infinite;
+        }
+
+        #title-screen p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #88ffaa;
+            margin-bottom: 30px;
+        }
+
+        .hunt-btn {
+            background-color: transparent;
+            color: #00ff66;
+            border: 2px solid #00ff66;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            font-family: 'Courier New', Courier, monospace;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 255, 102, 0.3);
+        }
+
+        .hunt-btn:hover {
+            background-color: #00ff66;
+            color: #0d0d0d;
+            box-shadow: 0 0 20px #00ff66;
+            transform: scale(1.05);
+        }
+
+        /* Hidden Game Container */
+        #game-container {
+            display: none; /* Keeps your game code hidden initially */
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        /* Existing Game Layout Styles */
         h1.main-title {
             font-size: 3.5rem;
             text-align: center;
@@ -34,7 +99,7 @@
             box-shadow: 0 0 10px rgba(0, 255, 102, 0.2);
             display: none; /* Hidden by default */
         }
-        /* First section is visible initially */
+        /* First section is visible initially once game starts */
         #section1 {
             display: block;
         }
@@ -98,7 +163,7 @@
             border-bottom-color: #ff3333;
         }
 
-        /* --- NEW ANIMATION STYLES --- */
+        /* --- PHYSICS EXPLOSION & CONGRATS STYLES --- */
         .falling-particle {
             position: fixed;
             pointer-events: none;
@@ -156,6 +221,16 @@
             letter-spacing: 2px;
         }
 
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         @keyframes pulse {
             from { text-shadow: 0 0 20px rgba(0, 255, 102, 0.6); transform: scale(1); }
             to { text-shadow: 0 0 40px rgba(0, 255, 102, 1); transform: scale(1.03); }
@@ -164,81 +239,89 @@
 </head>
 <body>
 
-    <div id="game-content">
-        <h1 class="main-title">Welcome to Plexus</h1>
+    <div id="title-screen">
+        <h1>Plexus Scavenger Hunt</h1>
+        <p>SYSTEM WARNING: We've been hacked, and it's up to you to save our system from being destroyed...</p>
+        <button class="hunt-btn" onclick="startHunt()">Begin the hunt</button>
+    </div>
 
-        <div id="section1" class="section">
-            <div id="typing-container"></div>
-            
-            <div id="stage1-interactive" style="display: none;">
-                <div class="input-group">
-                    <label for="inspect-code">Enter Ciphertext string hidden:</label><br>
-                    <input type="text" id="inspect-code" placeholder="Paste ciphertext here" oninput="liveDecrypt()">
+    <div id="game-container">
+        <div id="game-content">
+            <h1 class="main-title">Welcome to Plexus</h1>
+
+            <div id="section1" class="section">
+                <div id="typing-container"></div>
+                
+                <div id="stage1-interactive" style="display: none;">
+                    <div class="input-group">
+                        <label for="inspect-code">Enter Ciphertext string hidden:</label><br>
+                        <input type="text" id="inspect-code" placeholder="Paste ciphertext here" oninput="liveDecrypt()">
+                    </div>
+
+                    <div class="input-group">
+                        <label for="cipher-key">Enter 4-Digit Cipher Key (Where are you?):</label><br>
+                        <input type="text" id="cipher-key" maxlength="4" placeholder="0000" oninput="liveDecrypt()">
+                        <br>
+                        <label style="margin-top: 10px; display:block;">Decoded Output Preview:</label>
+                        <div id="decrypted-preview" class="preview-box">-------</div>
+                    </div>
+
+                    <hr style="border-color: #222; margin: 20px 0;">
+
+                    <div class="input-group">
+                        <label for="stage1-passcode">Enter the Correct Decoded Message to Proceed:</label><br>
+                        <input type="text" id="stage1-passcode" placeholder="Enter word">
+                        <br>
+                        <button onclick="checkStage1()">Submit Key</button>
+                    </div>
+                    <p id="error1" class="error"></p>
                 </div>
-
-                <div class="input-group">
-                    <label for="cipher-key">Enter 4-Digit Cipher Key (Where are you?):</label><br>
-                    <input type="text" id="cipher-key" maxlength="4" placeholder="0000" oninput="liveDecrypt()">
-                    <br>
-                    <label style="margin-top: 10px; display:block;">Decoded Output Preview:</label>
-                    <div id="decrypted-preview" class="preview-box">-------</div>
-                </div>
-
-                <hr style="border-color: #222; margin: 20px 0;">
-
-                <div class="input-group">
-                    <label for="stage1-passcode">Enter the Correct Decoded Message to Proceed:</label><br>
-                    <input type="text" id="stage1-passcode" placeholder="Enter word">
-                    <br>
-                    <button onclick="checkStage1()">Submit Key</button>
-                </div>
-                <p id="error1" class="error"></p>
             </div>
-        </div>
 
-        <div id="section2" class="section">
-            <h2>[STAGE 2: PLEXUS MISSION BOARD]</h2>
-            <p>
-                welcome to the plexus mission board. our primary objective is to partner with visionary companies to solve their most complex engineering challenges, from sourcing critical parts to full-scale product manufacturing. in Collaboration with top leaders in the industrial sector, we focus on the Optimization of assembly lines and automated systems. our Ruggedized designs ensure that technology thrives in the harshest environments, allowing us to Develop next-generation aerospace systems. furthermore, we provide Long-term support to navigate supply chain shortages, ensuring companies always have the right components. our Engineering teams bring this same precision to lifescience, driving the Sustained manufacturing of advanced medical imaging diagnostics and Surgical robotics. find the hidden room in this text to discover the passcode that unlocks the next step of your journey. you will find the access code inside that location on a physical sign, which will unlock the electronic system.            </p>
-            <p><strong>Find the room hidden in the message above and locate the physical code hidden inside it.</strong></p>
-            
-            <label for="stage2-key">Enter Code Found in Room:</label><br>
-            <input type="text" id="stage2-key" placeholder="Enter code">
-            <button onclick="checkStage2()">Submit Code</button>
-            <p id="error2" class="error"></p>
-        </div>
+            <div id="section2" class="section">
+                <h2>[STAGE 2: PLEXUS MISSION BOARD]</h2>
+                <p>
+                    welcome to the plexus mission board. our primary objective is to partner with visionary companies to solve their most complex engineering challenges, from sourcing critical parts to full-scale product manufacturing. in Collaboration with top leaders in the industrial sector, we focus on the Optimization of assembly lines and automated systems. our Ruggedized designs ensure that technology thrives in the harshest environments, allowing us to Develop next-generation aerospace systems. furthermore, we provide Long-term support to navigate supply chain shortages, ensuring companies always have the right components. our Engineering teams bring this same precision to lifescience, driving the Sustained manufacturing of advanced medical imaging diagnostics and Surgical robotics. find the hidden room in this text to discover the passcode that unlocks the next step of your journey. you will find the access code inside that location on a physical sign, which will unlock the electronic system.                </p>
+                <p><strong>Find the room hidden in the message above and locate the physical code hidden inside it.</strong></p>
+                
+                <label for="stage2-key">Enter Code Found in Room:</label><br>
+                <input type="text" id="stage2-key" placeholder="Enter code">
+                <button onclick="checkStage2()">Submit Code</button>
+                <p id="error2" class="error"></p>
+            </div>
 
-        <div id="section3" class="section">
-            <h2>[STAGE 3: AUDIO TRANSMISSION]</h2>
-            <p>An intercepted audio transmission has been logged. You must download and analyze it using an external Morse Code audio translator to decipher the location of the next asset. The key word is Raleigh.</p>
-            
-            <audio controls>
-                <source src="morse.wav" type="audio/wav">
-                Your browser does not support the audio element.
-            </audio>
-            
-            <br>
-            <a href="https://morsecode.world/international/decoder/audio-decoder-adaptive.html" target="_blank" class="tool-link">> Launch External Audio Decoder Tool</a>
-            <br>
-            
-            <div class="input-group">
-                <label for="stage3-key">Enter Key from Paper:</label><br>
-                <input type="text" id="stage3-key" placeholder="Enter code">
+            <div id="section3" class="section">
+                <h2>[STAGE 3: AUDIO TRANSMISSION]</h2>
+                <p>An intercepted audio transmission has been logged. You must download and analyze it using an external Morse Code audio translator to decipher the location of the next asset. The key word is Raleigh.</p>
+                
+                <audio controls>
+                    <source src="morse.wav" type="audio/wav">
+                    Your browser does not support the audio element.
+                </audio>
+                
                 <br>
-                <button onclick="checkStage3()">Verify Key</button>
+                <a href="https://morsecode.world/international/decoder/audio-decoder-adaptive.html" target="_blank" class="tool-link">> Launch External Audio Decoder Tool</a>
+                <br>
+                
+                <div class="input-group">
+                    <label for="stage3-key">Enter Key from Paper:</label><br>
+                    <input type="text" id="stage3-key" placeholder="Enter code">
+                    <br>
+                    <button onclick="checkStage3()">Verify Key</button>
+                </div>
+                <p id="error3" class="error"></p>
             </div>
-            <p id="error3" class="error"></p>
-        </div>
 
-        <div id="section4" class="section">
-            <h2>[FINAL STAGE: ACCESS GRANTED]</h2>
-            <p>In order to complete this hunt, we will have to go back to the very beginning.</p>
-            <p>Find me to get the final code to solve the scavenger hunt.</p>
-            
-            <label for="final-key">Enter Final Victory Code:</label><br>
-            <input type="text" id="final-key" placeholder="Final Code">
-            <button onclick="checkFinal()">Complete Hunt</button>
-            <p id="error4" class="error" style="color: #00ff66;"></p>
+            <div id="section4" class="section">
+                <h2>[FINAL STAGE: ACCESS GRANTED]</h2>
+                <p>In order to complete this hunt, we will have to go back to the very beginning.</p>
+                <p>Find me to get the final code to solve the scavenger hunt.</p>
+                
+                <label for="final-key">Enter Final Victory Code:</label><br>
+                <input type="text" id="final-key" placeholder="Final Code">
+                <button onclick="checkFinal()">Complete Hunt</button>
+                <p id="error4" class="error" style="color: #00ff66;"></p>
+            </div>
         </div>
     </div>
 
@@ -248,6 +331,14 @@
     </div>
 
     <script>
+        // Transition Page Toggle Logic
+        function startHunt() {
+            document.getElementById('title-screen').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            // Start the typing effect once the hunt begins
+            typeEffect();
+        }
+
         // --- STAGE 1 CONFIG & TYPING EFFECT ---
         const lines = [
             "Aerospace networks initialized.",
@@ -255,7 +346,7 @@
             "Lifescience databases online.",
             "Advanced encryption detected.",
             "System ready.\n",
-            "Make sure to INSPECT every ELEMENT closely during this scavenger hunt.,"
+            "Make sure to INSPECT every ELEMENT closely during this scavenger hunt.,",
             "Good luck getting through our CONSOLE.\n"
         ];
 
@@ -482,7 +573,8 @@
             }).onfinish = () => p.remove();
         }
 
-        window.onload = typeEffect;
+        // Changed window.onload to point to nothing initially so that the 
+        // type effect waits until the "Begin the Hunt" button is clicked!
     </script>
 </body>
 </html>
