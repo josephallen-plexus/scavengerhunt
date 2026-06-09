@@ -48,6 +48,28 @@
             margin-bottom: 30px;
         }
 
+        .age-group {
+            margin-bottom: 25px;
+        }
+
+        .age-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        .age-input {
+            background: #000;
+            border: 1px solid #00ff66;
+            color: #00ff66;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            width: 80px;
+            text-align: center;
+        }
+
         .hunt-btn {
             background-color: transparent;
             color: #00ff66;
@@ -163,6 +185,48 @@
             border-bottom-color: #ff3333;
         }
 
+        /* Persistent Hint System Component */
+        #hint-overlay {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #111;
+            border: 2px solid #ff3333;
+            box-shadow: 0 0 15px rgba(255, 51, 51, 0.4);
+            padding: 15px;
+            border-radius: 5px;
+            max-width: 300px;
+            z-index: 9999;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        #hint-timer {
+            font-weight: bold;
+            color: #ff3333;
+            margin-bottom: 8px;
+        }
+        #hint-btn {
+            background: #ff3333;
+            color: #000;
+            border: none;
+            padding: 6px 12px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            display: none;
+        }
+        #hint-btn:hover {
+            background: #cc2424;
+        }
+        #hint-content {
+            margin-top: 10px;
+            color: #fff;
+            border-left: 3px solid #ff3333;
+            padding-left: 8px;
+            display: none;
+            font-size: 0.95rem;
+        }
+
         /* --- PHYSICS EXPLOSION & CONGRATS STYLES --- */
         .falling-particle {
             position: fixed;
@@ -242,6 +306,12 @@
     <div id="title-screen">
         <h1>Plexus Scavenger Hunt</h1>
         <p>SYSTEM WARNING: We've been hacked, and it's up to you to save our system from being destroyed...</p>
+        
+        <div class="age-group">
+            <label for="user-age">ENTER YOUR AGE IN YEARS:</label>
+            <input type="number" id="user-age" class="age-input" min="1" max="120" placeholder="--">
+        </div>
+
         <button class="hunt-btn" onclick="startHunt()">Begin the hunt</button>
     </div>
 
@@ -326,18 +396,96 @@
         </div>
     </div>
 
+    <div id="hint-overlay">
+        <div id="hint-timer">Hint unlocks in: --:--</div>
+        <button id="hint-btn" onclick="revealHint()">ACCESS HINT</button>
+        <div id="hint-content"></div>
+    </div>
+
     <div id="congrats-screen">
         <div class="congrats-text">System Purged<br>Congratulations!</div>
         <div class="congrats-subtext">You have successfully completed the hunt.</div>
     </div>
 
     <script>
-        // Transition Page Toggle Logic
+        // --- TIMER & HINT ENGINE STATE VARIABLES ---
+        let baseTimeInSeconds = 480; // Default: 8 minutes (480 seconds)
+        let countdownTimerObj = null;
+        let activeHintText = "";
+
+        // Dynamic Hint Text Pool mapped out per stage milestone
+        const hintRepository = {
+            stage1_part1: "Hint 1: Right Click",
+            stage1_part2: "Hint 2: Building Address",
+            stage2: "Hint 3: Capital Letters",
+            stage3: "Hint 4: Download and Upload",
+            stage4: "Hint 5: Scroll to the top"
+        };
+
+        // Transition Page Toggle Logic & Dynamic Time Calculator
         function startHunt() {
+            const ageInputVal = document.getElementById('user-age').value.trim();
+            
+            if (ageInputVal !== "") {
+                const parsedAge = parseInt(ageInputVal);
+                if (!isNaN(parsedAge) && parsedAge < 15 && parsedAge > 0) {
+                    // Reduce time allocation by 30 seconds for every year under 15
+                    const ageDifference = 15 - parsedAge;
+                    baseTimeInSeconds = 480 - (ageDifference * 30);
+                    // Guard check to keep game functional if age input is extreme
+                    if (baseTimeInSeconds < 30) baseTimeInSeconds = 30; 
+                }
+            }
+
             document.getElementById('title-screen').style.display = 'none';
             document.getElementById('game-container').style.display = 'block';
-            // Start the typing effect once the hunt begins
+            document.getElementById('hint-overlay').style.display = 'block';
+            
+            // Queue up hint sequence for Stage 1 Part 1
+            initializeStageTimer('stage1_part1');
             typeEffect();
+        }
+
+        // Core Hint Engine Lifecycle manager
+        function initializeStageTimer(stageKey) {
+            // Reset existing interval executions
+            if (countdownTimerObj) clearInterval(countdownTimerObj);
+
+            activeHintText = hintRepository[stageKey];
+            let remainingTime = baseTimeInSeconds;
+
+            const timerDisplay = document.getElementById('hint-timer');
+            const actionBtn = document.getElementById('hint-btn');
+            const hintDisplayBlock = document.getElementById('hint-content');
+
+            // Reset visibility settings for the new milestone
+            timerDisplay.style.display = "block";
+            actionBtn.style.display = "none";
+            hintDisplayBlock.style.display = "none";
+            hintDisplayBlock.innerText = "";
+
+            function paintTimerFrame() {
+                if (remainingTime <= 0) {
+                    clearInterval(countdownTimerObj);
+                    timerDisplay.style.display = "none";
+                    actionBtn.style.display = "block";
+                } else {
+                    const minutes = Math.floor(remainingTime / 60);
+                    const seconds = remainingTime % 60;
+                    timerDisplay.innerText = `Hint unlocks in: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    remainingTime--;
+                }
+            }
+
+            paintTimerFrame();
+            countdownTimerObj = setInterval(paintTimerFrame, 1000);
+        }
+
+        function revealHint() {
+            const hintDisplayBlock = document.getElementById('hint-content');
+            hintDisplayBlock.innerText = activeHintText;
+            hintDisplayBlock.style.display = "block";
+            document.getElementById('hint-btn').style.display = "none";
         }
 
         // --- STAGE 1 CONFIG & TYPING EFFECT ---
@@ -374,6 +522,7 @@
 
         // --- VIGENERE ENCRYPTION HANDLER ---
         const targetCiphertext = "xdtislg";
+        let part2TimerTriggered = false;
         
         console.log("Decode This: " + targetCiphertext);
 
@@ -397,6 +546,11 @@
             const previewBox = document.getElementById('decrypted-preview');
             
             if (inspectInput === targetCiphertext) {
+                // If user enters correct ciphertext string, instantly flip hint timer to Hint 2
+                if (!part2TimerTriggered) {
+                    part2TimerTriggered = true;
+                    initializeStageTimer('stage1_part2');
+                }
                 const decryptedText = decryptVigenere(inspectInput, keyInput);
                 previewBox.innerText = decryptedText.toUpperCase();
             } else {
@@ -426,6 +580,9 @@
                 document.getElementById('error1').innerText = "Access Granted. Initializing Phase 2 Link...";
                 document.getElementById('section2').style.display = 'block';
                 document.getElementById('section2').scrollIntoView({ behavior: 'smooth' });
+                
+                // Advance global tracking engine to Stage 2 Hint
+                initializeStageTimer('stage2');
             } else {
                 document.getElementById('error1').style.color = "#ff3333";
                 document.getElementById('error1').innerText = "Invalid decrypted passcode.";
@@ -438,6 +595,9 @@
             if (code === "riverside") { 
                 document.getElementById('section3').style.display = 'block';
                 document.getElementById('section3').scrollIntoView({ behavior: 'smooth' });
+                
+                // Advance global tracking engine to Stage 3 Hint
+                initializeStageTimer('stage3');
             } else {
                 document.getElementById('error2').innerText = "Access Denied. Invalid Room Passcode.";
             }
@@ -449,6 +609,9 @@
             if (code === "corp") {
                 document.getElementById('section4').style.display = 'block';
                 document.getElementById('section4').scrollIntoView({ behavior: 'smooth' });
+                
+                // Advance global tracking engine to Final Hint
+                initializeStageTimer('stage4');
             } else {
                 document.getElementById('error3').innerText = "Access Denied. Incorrect Clearance Key.";
             }
@@ -458,6 +621,9 @@
         function checkFinal() {
             const code = document.getElementById('final-key').value.trim().toLowerCase();
             if (code === "plex") {
+                // Remove interactive hint mechanism once complete
+                if (countdownTimerObj) clearInterval(countdownTimerObj);
+                document.getElementById('hint-overlay').style.display = 'none';
                 triggerExplosionSequence();
             } else {
                 document.getElementById('error4').style.color = "#ff3333";
@@ -573,9 +739,6 @@
                 easing: 'cubic-bezier(0.1, 0.8, 0.3, 1)'
             }).onfinish = () => p.remove();
         }
-
-        // Changed window.onload to point to nothing initially so that the 
-        // type effect waits until the "Begin the Hunt" button is clicked!
     </script>
 </body>
 </html>
