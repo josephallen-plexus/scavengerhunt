@@ -424,17 +424,17 @@
 
     <script>
         // --- TIMER & HINT ENGINE STATE VARIABLES ---
-        let baseTimeInSeconds = 480; // Default: 8 minutes (480 seconds)
+        let baseTimeInSeconds = 300; // Default: 5 minutes (300 seconds)
         let countdownTimerObj = null;
         let activeHintText = "";
 
         // Dynamic Hint Text Pool mapped out per stage milestone
         const hintRepository = {
-            stage1_part1: "Use the code we give you and put it in the designated box",
-            stage1_part2: "Look around at the numbers around the room",
+            stage1_part1: "Hint: Use the code we give you and put it in the designated box",
+            stage1_part2: "Hint: Look around at the numbers around the room",
             stage2: "Hint 3: Capital Letters",
-            stage3: "Hint 4: Download and Upload",
-            stage4: "Hint 5: Scroll to the top"
+            stage3: "Hint 4: Go find Lamar at the security desk and use the code",
+            stage4: "Hint 5: Scroll to the top and use the first letters"
         };
 
         // Transition Page Toggle Logic & Dynamic Time Calculator
@@ -446,7 +446,7 @@
                 if (!isNaN(parsedAge) && parsedAge < 15 && parsedAge > 0) {
                     // Reduce time allocation by 30 seconds for every year under 15
                     const ageDifference = 15 - parsedAge;
-                    baseTimeInSeconds = 480 - (ageDifference * 30);
+                    baseTimeInSeconds = 300 - (ageDifference * 15);
                     // Guard check to keep game functional if age input is extreme
                     if (baseTimeInSeconds < 30) baseTimeInSeconds = 30; 
                 }
