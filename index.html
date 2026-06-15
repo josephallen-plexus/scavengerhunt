@@ -375,19 +375,22 @@
 
             <div id="section3" class="section">
                 <h2>[STAGE 3: AUDIO TRANSMISSION]</h2>
-                <p>An intercepted audio transmission has been logged. You must download and analyze it using an external Morse Code audio translator to decipher the location of the next clue. The key word is Raleigh.</p>
+                <p>An intercepted audio transmission has been logged. Run the internal decryption protocol to isolate the target asset location.</p>
                 
-                <audio controls>
+                <audio controls style="margin-bottom: 15px;">
                     <source src="morse.wav" type="audio/wav">
                     Your browser does not support the audio element.
                 </audio>
-                
-                <br>
-                <a href="https://morsecode.world/international/decoder/audio-decoder-adaptive.html" target="_blank" class="tool-link">> Launch External Audio Decoder Tool</a>
                 <br>
                 
-                <div class="input-group">
-                    <label for="stage3-key">Enter Key from Paper:</label><br>
+                <button id="run-decoder-btn" onclick="simulateAudioDecoding()" style="background: #00ff66; color: #000;">[ RUN AUDIO DECRYPTOR ]</button>
+                
+                <div id="decoder-terminal" style="display: none; background: #000; border: 1px dashed #00ff66; padding: 10px; margin: 15px 0; font-family: 'Courier New', Courier, monospace;">
+                    <span id="decoder-status" style="color: #00ff66;">Initializing protocol...</span>
+                </div>
+            
+                <div class="input-group" style="margin-top: 20px;">
+                    <label for="stage3-key">Enter Key from Asset:</label><br>
                     <input type="text" id="stage3-key" placeholder="Enter code">
                     <br>
                     <button onclick="checkStage3()">Verify Key</button>
