@@ -614,7 +614,36 @@
                 document.getElementById('error2').innerText = "Access Denied. Invalid Room Passcode.";
             }
         }
+// --- NEW AUTO-DECODER FUNCTION ---
+        function simulateAudioDecoding() {
+            const btn = document.getElementById('run-decoder-btn');
+            const terminal = document.getElementById('decoder-terminal');
+            const statusText = document.getElementById('decoder-status');
+            
+            // Hide button, show terminal
+            btn.style.display = 'none';
+            terminal.style.display = 'block';
+            
+            // The "Smoke and Mirrors" sequence
+            const sequence = [
+                { text: "Analyzing waveform frequencies...", time: 500 },
+                { text: "Isolating dots and dashes...", time: 2000 },
+                { text: "Cross-referencing Morse dictionary...", time: 3500 },
+                { text: "Decryption Complete. Target Keyword:", time: 5000 },
+                { text: ">> S E C U R I T Y - D E S K <<", time: 6000 }
+            ];
 
+            // Play the sequence
+            sequence.forEach(step => {
+                setTimeout(() => {
+                    if (step.text.includes(">>")) {
+                        statusText.innerHTML += `<br><br><span style="color: #fff; font-size: 1.5rem; letter-spacing: 4px; animation: blink 1s infinite;">${step.text}</span>`;
+                    } else {
+                        statusText.innerHTML = step.text;
+                    }
+                }, step.time);
+            });
+        }
         // --- STAGE 3 VALIDATION ---
         function checkStage3() {
             const code = document.getElementById('stage3-key').value.trim().toLowerCase();
