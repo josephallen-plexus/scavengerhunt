@@ -184,6 +184,15 @@
             color: #ff3333;
             border-bottom-color: #ff3333;
         }
+        .starter-code-box {
+            background: #00ff66;
+            color: #000;
+            padding: 4px 10px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border-radius: 4px;
+            display: inline-block;
+        }
 
         /* Persistent Hint System Component */
         #hint-overlay {
@@ -323,9 +332,12 @@
                 <div id="typing-container"></div>
                 
                 <div id="stage1-interactive" style="display: none;">
+                    
+                    <p style="font-size: 1.2rem; margin-bottom: 25px;">Here is the starter code to enter the system! <span class="starter-code-box">xdtislg</span></p>
+
                     <div class="input-group">
-                        <label for="inspect-code">Enter Ciphertext string hidden:</label><br>
-                        <input type="text" id="inspect-code" placeholder="Paste ciphertext here" oninput="liveDecrypt()">
+                        <label for="inspect-code">Enter Starter Code:</label><br>
+                        <input type="text" id="inspect-code" placeholder="Enter starter code" oninput="liveDecrypt()">
                     </div>
 
                     <div class="input-group">
@@ -415,8 +427,8 @@
 
         // Dynamic Hint Text Pool mapped out per stage milestone
         const hintRepository = {
-            stage1_part1: "Hint 1: Right Click",
-            stage1_part2: "Hint 2: Building Address",
+            stage1_part1: "Use the code we give you and put it in the designated box",
+            stage1_part2: "Look around at the numbers around the room",
             stage2: "Hint 3: Capital Letters",
             stage3: "Hint 4: Download and Upload",
             stage4: "Hint 5: Scroll to the top"
@@ -495,7 +507,6 @@
             "Lifescience databases online.",
             "Advanced encryption detected.",
             "System ready.\n",
-            "Make sure to INSPECT everything closely during this scavenger hunt.",
             "Good luck getting through our CONSOLE.\n"
         ];
 
@@ -523,8 +534,6 @@
         // --- VIGENERE ENCRYPTION HANDLER ---
         const targetCiphertext = "xdtislg";
         let part2TimerTriggered = false;
-        
-        console.log("Decode This: " + targetCiphertext);
 
         function decryptVigenere(ciphertext, key) {
             if (!ciphertext || !key || key.length === 0) return "-------";
@@ -565,7 +574,7 @@
             
             if (inspectInput !== targetCiphertext) {
                 document.getElementById('error1').style.color = "#ff3333";
-                document.getElementById('error1').innerText = "Incorrect Ciphertext string entered.";
+                document.getElementById('error1').innerText = "Incorrect Starter Code entered.";
                 return;
             }
 
